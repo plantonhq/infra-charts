@@ -91,29 +91,3 @@ params:
     description: Install Solr Operator
     type: bool
     value: true
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

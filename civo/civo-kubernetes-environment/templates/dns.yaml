@@ -7,29 +7,3 @@ metadata:
 spec:
   domain_name: "{{ values.domain_name }}"
 {% endif %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
