@@ -8,16 +8,15 @@ metadata:
     - kind: GcpArtifactRegistryRepo
       name: "{{ values.docker_repo_name }}"
       type: uses
-      group: services
     {% endif %}
     {% if values.dnsZoneEnabled | bool %}
     - kind: GcpDnsZone
       name: "{{ values.domain_name }}"
       type: uses
-      group: services
     {% endif %}
 spec:
-  projectId: "{{ values.gcp_project_id }}"
+  projectId:
+    value: "{{ values.gcp_project_id }}"
   region: "{{ values.gcp_region }}"
 
   # ──── container runtime ────

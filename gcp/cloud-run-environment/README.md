@@ -1,6 +1,6 @@
 # GCP Cloud Run Environment
 
-The **GCP Cloud Run Environment** InfraChart provisions all cloud resources required to run containerized services on Google Cloud Run—with optional support for PostgreSQL database, storage bucket, Docker repository, service account, and DNS zone.
+The **GCP Cloud Run Environment** InfraChart provisions all cloud resources required to run containerized services on Google Cloud Run—with optional support for VPC networking, PostgreSQL database, storage bucket, Docker repository, service account, and DNS zone.
 
 Like the AWS ECS chart, it leverages **Jinja-based conditionals**, so you can turn features on or off with boolean flags, making it flexible for different environment needs.
 
@@ -14,6 +14,9 @@ Chart manifests live in the [`templates`](templates) directory; every tunable va
 |--------------------------------|----------------|------------------------------|
 | **Frontend Cloud Run Service** | Yes            | —                            |
 | **Backend Cloud Run Service**  | *No*           | `backendServiceEnabled`      |
+| **VPC Network**                | *No*           | `networkingEnabled`          |
+| **Subnetwork**                 | *No*           | `networkingEnabled`          |
+| **Router NAT**                 | *No*           | `networkingEnabled`          |
 | **DNS Zone**                   | *No*           | `dnsZoneEnabled`             |
 | **Docker Repository**          | *No*           | `dockerRepoEnabled`          |
 | **PostgreSQL Database**        | *No*           | `postgresEnabled`            |
@@ -24,6 +27,7 @@ Chart manifests live in the [`templates`](templates) directory; every tunable va
 
 Each optional resource is controlled by a boolean flag in `values.yaml`:
 
+* **`networkingEnabled: true`** → Creates VPC, Subnetwork, and Router NAT for private networking
 * **`backendServiceEnabled: true`** → Creates a second Cloud Run service for backend applications
 * **`dnsZoneEnabled: true`** → Creates a GCP DNS Zone for the specified domain
 * **`dockerRepoEnabled: true`** → Creates an Artifact Registry Docker repository for container images
@@ -45,6 +49,20 @@ Booleans are shown as **unquoted YAML booleans** (`true`/`false`) to avoid strin
 |---------------------|------------------------------|----------------------------|----------------------------|
 | **gcp_project_id**  | GCP Project ID               | `planton-cloud-testing`    | Required                   |
 | **gcp_region**      | GCP region for all resources | `us-central1`              | Default `us-central1`      |
+
+### Optional Networking
+
+| Parameter              | Description                                | Example / Default      | Required / Default    |
+|------------------------|--------------------------------------------|------------------------|-----------------------|
+| **networkingEnabled**  | Create VPC, Subnetwork, and Router NAT     | `true` / `false`       | **Default:** `true`   |
+| **vpc_name**           | Name of the VPC network                    | `cloud-run-vpc`        | Default `cloud-run-vpc` |
+| **subnet_cidr**        | Primary CIDR range for the subnet          | `10.0.0.0/24`          | Default `10.0.0.0/24` |
+
+When `networkingEnabled: true`:
+- A custom-mode VPC is created with regional routing
+- A subnetwork is created with private Google access enabled
+- A Cloud Router with NAT gateway is created for outbound internet access
+- PostgreSQL database (if enabled) uses private IP via the VPC
 
 ### Service Configuration
 
@@ -72,14 +90,15 @@ Booleans are shown as **unquoted YAML booleans** (`true`/`false`) to avoid strin
 
 ### Optional PostgreSQL Database
 
-| Parameter                    | Description                         | Example / Default          | Required / Default              |
-|------------------------------|-------------------------------------|----------------------------|---------------------------------|
-| **postgresEnabled**          | Create PostgreSQL database instance | `true` / `false`           | **Default:** `true`            |
-| **postgres_instance_name**   | Name of the PostgreSQL instance     | `postgres`                 | Default `postgres`              |
-| **postgres_tier**            | PostgreSQL machine tier             | `db-f1-micro`              | Default `db-f1-micro`           |
-| **postgres_storage_gb**      | Storage size in GB                  | `10`                       | Default `10`                    |
-| **postgres_version**         | PostgreSQL version                  | `POSTGRES_15`              | Default `POSTGRES_15`           |
-| **postgres_root_password**   | Root password (rotate after deploy) | `change-me-immediately`    | Default `change-me-immediately` |
+| Parameter                        | Description                                              | Example / Default          | Required / Default              |
+|----------------------------------|----------------------------------------------------------|----------------------------|---------------------------------|
+| **postgresEnabled**              | Create PostgreSQL database instance                      | `true` / `false`           | **Default:** `true`            |
+| **postgres_instance_name**       | Name of the PostgreSQL instance                          | `postgres`                 | Default `postgres`              |
+| **postgres_tier**                | PostgreSQL machine tier                                  | `db-f1-micro`              | Default `db-f1-micro`           |
+| **postgres_storage_gb**          | Storage size in GB                                       | `10`                       | Default `10`                    |
+| **postgres_version**             | PostgreSQL version                                       | `POSTGRES_15`              | Default `POSTGRES_15`           |
+| **postgres_root_password**       | Root password (rotate after deploy)                      | `change-me-immediately`    | Default `change-me-immediately` |
+| **postgres_authorized_networks** | List of CIDR ranges allowed to connect publicly          | `["1.2.3.4/32"]`           | Default `[]` (empty)            |
 
 ### Optional Storage Bucket
 
@@ -106,18 +125,28 @@ This chart uses **synthetic relationships** to ensure resources are created in t
 ### Dependency Flow
 
 ```
+VPC (if networkingEnabled)
+  ↓
+Subnetwork + Router NAT (if networkingEnabled, depends on VPC)
+  ↓
+Postgres Database (if enabled, depends on Subnetwork when networkingEnabled)
+  ↓
+Frontend Service (depends on Postgres, Docker Repo, DNS Zone)
+
 Service Account (if enabled)
   ↓
 Storage Bucket (if enabled, depends on Service Account)
   ↓
 Backend Service (if enabled, depends on Storage Bucket, Service Account, Postgres, Docker Repo, DNS Zone)
-
-Postgres Database (if enabled)
-  ↓
-Frontend Service (depends on Postgres, Docker Repo, DNS Zone)
 ```
 
 ### How It Works
+
+- **Subnetwork and Router NAT** wait for:
+  - VPC network (if `networkingEnabled: true`)
+
+- **PostgreSQL Database** waits for:
+  - Subnetwork (if `networkingEnabled: true`)
 
 - **Frontend Service** waits for:
   - PostgreSQL database (if `postgresEnabled: true`)
@@ -184,17 +213,26 @@ When `serviceAccountEnabled: true`, the chart creates a service account with a J
 
 ## PostgreSQL Database Configuration
 
-When `postgresEnabled: true`, the PostgreSQL instance is created with:
+When `postgresEnabled: true`, the PostgreSQL instance is created with different network configurations depending on the `networkingEnabled` flag:
 
-- **Authorized Networks**: `0.0.0.0/0` (open to all IPs by default)
-- **Root Password**: Uses the value from `postgres_root_password`
+### With Networking Enabled (`networkingEnabled: true`)
+
+- **Private IP**: Enabled via VPC peering (most secure)
+- **Public IP**: Only enabled if `postgres_authorized_networks` is not empty
+- **Authorized Networks**: Uses the list from `postgres_authorized_networks` (can be empty for private-only access)
+
+### Without Networking (`networkingEnabled: false`)
+
+- **Public IP**: Enabled by default
+- **Authorized Networks**: Uses `postgres_authorized_networks` if provided, otherwise defaults to `0.0.0.0/0` (open to all IPs)
 
 ### Important Security Steps
 
 1. **Rotate the root password immediately** after deployment
-2. **Restrict authorized networks** to only your application IPs or VPC
-3. **Create application-specific database users** instead of using root
-4. **Enable Cloud SQL Proxy** for secure connections from Cloud Run services
+2. **Enable networking** (`networkingEnabled: true`) for production environments to use private IP
+3. **Restrict authorized networks** by providing specific CIDR ranges in `postgres_authorized_networks`
+4. **Create application-specific database users** instead of using root
+5. **Use Cloud SQL Proxy** or VPC connector for secure connections from Cloud Run services
 
 ---
 
@@ -232,12 +270,12 @@ When `dockerRepoEnabled: true`, an Artifact Registry Docker repository is create
 
 ## Important Notes
 
+* **Networking**: Enable `networkingEnabled: true` for production to use private IP for PostgreSQL. The VPC includes a Router NAT for outbound internet access from private resources
 * **DNS Zone**: Ensure your domain is registered and delegated to GCP before enabling `dnsZoneEnabled`
 * **PostgreSQL Password**: The default password `change-me-immediately` should be rotated immediately after deployment for security
-* **Authorized Networks**: The default `0.0.0.0/0` allows connections from anywhere. Restrict this in production environments
+* **Authorized Networks**: When networking is disabled, the default `0.0.0.0/0` allows connections from anywhere. Use `postgres_authorized_networks` to restrict access or enable networking for private IP
 * **Service Account**: IAM permissions must be granted manually after the service account is created
 * **Container Images**: Both services default to `nginx:latest`. Replace with your actual application images after deployment
-* **Parallel Deployment**: All resources are independent, so they deploy in parallel (no dependency graph)
 * **Environment Variables**: Customize the placeholder `SERVICE_NAME` and `ENV` variables for your applications
 
 ---

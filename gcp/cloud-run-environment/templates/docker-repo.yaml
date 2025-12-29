@@ -5,7 +5,8 @@ kind: GcpArtifactRegistryRepo
 metadata:
   name: "{{ values.docker_repo_name }}"
 spec:
-  projectId: "{{ values.gcp_project_id }}"
+  projectId:
+    value: "{{ values.gcp_project_id }}"
   region: "{{ values.gcp_region }}"
   repoFormat: DOCKER
 {% endif %}

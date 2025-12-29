@@ -9,10 +9,10 @@ metadata:
     - kind: GcpServiceAccount
       name: "{{ values.service_account_id }}"
       type: depends_on
-      group: storage
   {% endif %}
 spec:
-  gcpProjectId: "{{ values.gcp_project_id }}"
-  gcpRegion: "{{ values.gcp_region }}"
+  gcpProjectId:
+    value: "{{ values.gcp_project_id }}"
+  location: "{{ values.gcp_region }}"
 {% endif %}
 
