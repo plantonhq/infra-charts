@@ -4,8 +4,15 @@ apiVersion: gcp.project-planton.org/v1
 kind: GcpCloudSql
 metadata:
   name: "{{ values.postgres_instance_name }}"
+{% if values.networkingEnabled | bool %}
+  relationships:
+    - kind: GcpSubnetwork
+      name: "{{ values.vpc_name }}-subnet"
+      type: runs_on
+{% endif %}
 spec:
-  projectId: "{{ values.gcp_project_id }}"
+  projectId:
+    value: "{{ values.gcp_project_id }}"
   region: "{{ values.gcp_region }}"
   databaseEngine: POSTGRESQL
   databaseVersion: "{{ values.postgres_version }}"
@@ -13,7 +20,23 @@ spec:
   storageGb: {{ values.postgres_storage_gb }}
   rootPassword: "{{ values.postgres_root_password }}"  # IMPORTANT: Rotate this password immediately after deployment
   network:
+{% if values.networkingEnabled | bool %}
+    vpcId:
+      valueFrom:
+        kind: GcpVpc
+        name: "{{ values.vpc_name }}"
+        fieldPath: status.outputs.network_self_link
+    privateIpEnabled: true
+{% endif %}
+{% if values.postgres_authorized_networks | length > 0 %}
+    ipv4Enabled: true
+    authorizedNetworks:
+{% for cidr in values.postgres_authorized_networks %}
+      - "{{ cidr }}"
+{% endfor %}
+{% elif not values.networkingEnabled | bool %}
+    ipv4Enabled: true
     authorizedNetworks:
       - 0.0.0.0/0
 {% endif %}
-
+{% endif %}

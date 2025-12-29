@@ -8,6 +8,20 @@ params:
     description: GCP region for all resources
     value: us-central1
 
+  # ─── Optional Networking ─────────────────────────────────────────────────
+  - name: networkingEnabled
+    description: "true → create VPC, Subnetwork, and Router NAT"
+    type: bool
+    value: true
+
+  - name: vpc_name
+    description: Name of the VPC network
+    value: cloud-run-vpc
+
+  - name: subnet_cidr
+    description: Primary CIDR range for the subnet
+    value: "10.0.0.0/24"
+
   # ─── Service Configuration ─────────────────────────────────────────────
   - name: frontend_service_name
     description: Name of the frontend Cloud Run service
@@ -75,6 +89,11 @@ params:
   - name: postgres_root_password
     description: Root password (rotate after deployment)
     value: change-me-immediately
+
+  - name: postgres_authorized_networks
+    description: List of CIDR ranges allowed to connect publicly (e.g., ["1.2.3.4/32", "5.6.7.8/32"])
+    type: list
+    value: []
 
   # ─── Optional Storage Bucket ───────────────────────────────────────────
   - name: storageBucketEnabled
