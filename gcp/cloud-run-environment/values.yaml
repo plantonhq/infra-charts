@@ -10,7 +10,7 @@ params:
 
   # ─── Optional Networking ─────────────────────────────────────────────────
   - name: networkingEnabled
-    description: "true → create VPC, Subnetwork, and Router NAT"
+    description: Create VPC, Subnetwork, and Router NAT
     type: bool
     value: true
 
@@ -40,7 +40,7 @@ params:
     value: "8080"
 
   - name: backendServiceEnabled
-    description: "true → create backend Cloud Run service"
+    description: Create backend Cloud Run service
     type: bool
     value: true
 
@@ -50,13 +50,13 @@ params:
     value: example.com
 
   - name: dnsZoneEnabled
-    description: "true → create GCP DNS Zone"
+    description: Create GCP DNS Zone
     type: bool
     value: true
 
   # ─── Optional Docker Repository ────────────────────────────────────────
   - name: dockerRepoEnabled
-    description: "true → create Docker repository"
+    description: Create Docker repository
     type: bool
     value: true
 
@@ -64,40 +64,47 @@ params:
     description: Name of the Docker repository
     value: docker-repo
 
-  # ─── Optional PostgreSQL Database ──────────────────────────────────────
-  - name: postgresEnabled
-    description: "true → create PostgreSQL database instance"
+  # ─── Optional Cloud SQL Database ───────────────────────────────────────
+  - name: databaseEnabled
+    description: Create Cloud SQL database instance
     type: bool
     value: true
 
-  - name: postgres_instance_name
-    description: Name of the PostgreSQL instance
-    value: postgres
+  - name: database_engine
+    description: Database engine type (POSTGRESQL or MYSQL)
+    type: string_enum
+    enum_values: ["POSTGRESQL", "MYSQL"]
+    value: POSTGRESQL
 
-  - name: postgres_tier
-    description: PostgreSQL machine tier
+  - name: database_instance_name
+    description: Name of the database instance
+    value: database
+
+  - name: database_tier
+    description: Cloud SQL machine tier
     value: db-f1-micro
 
-  - name: postgres_storage_gb
+  - name: database_storage_gb
     description: Storage size in GB
     value: "10"
 
-  - name: postgres_version
-    description: PostgreSQL version
+  - name: database_version
+    description: Database version (e.g., POSTGRES_15 or MYSQL_8_0)
     value: POSTGRES_15
 
-  - name: postgres_root_password
+  - name: database_root_password
     description: Root password (rotate after deployment)
     value: change-me-immediately
 
-  - name: postgres_authorized_networks
+  - name: database_authorized_networks
     description: List of CIDR ranges allowed to connect publicly (e.g., ["1.2.3.4/32", "5.6.7.8/32"])
     type: list
-    value: []
+    value:
+      - "0.0.0.0/0"
 
   # ─── Optional Storage Bucket ───────────────────────────────────────────
   - name: storageBucketEnabled
-    description: "true → create storage bucket"
+    description: Create storage bucket
     type: bool
     value: true
 
@@ -107,7 +114,7 @@ params:
 
   # ─── Optional Service Account ──────────────────────────────────────────
   - name: serviceAccountEnabled
-    description: "true → create Service Account with JSON key"
+    description: Create Service Account with JSON key
     type: bool
     value: true
 

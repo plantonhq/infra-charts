@@ -1,6 +1,6 @@
 # GCP Cloud Run Environment
 
-The **GCP Cloud Run Environment** InfraChart provisions all cloud resources required to run containerized services on Google Cloud Run—with optional support for VPC networking, PostgreSQL database, storage bucket, Docker repository, service account, and DNS zone.
+The **GCP Cloud Run Environment** InfraChart provisions all cloud resources required to run containerized services on Google Cloud Run—with optional support for VPC networking, Cloud SQL database (PostgreSQL or MySQL), storage bucket, Docker repository, service account, and DNS zone.
 
 Like the AWS ECS chart, it leverages **Jinja-based conditionals**, so you can turn features on or off with boolean flags, making it flexible for different environment needs.
 
@@ -19,7 +19,7 @@ Chart manifests live in the [`templates`](templates) directory; every tunable va
 | **Router NAT**                 | *No*           | `networkingEnabled`          |
 | **DNS Zone**                   | *No*           | `dnsZoneEnabled`             |
 | **Docker Repository**          | *No*           | `dockerRepoEnabled`          |
-| **PostgreSQL Database**        | *No*           | `postgresEnabled`            |
+| **Cloud SQL Database**         | *No*           | `databaseEnabled`            |
 | **Storage Bucket**             | *No*           | `storageBucketEnabled`       |
 | **Service Account**            | *No*           | `serviceAccountEnabled`      |
 
@@ -31,7 +31,7 @@ Each optional resource is controlled by a boolean flag in `values.yaml`:
 * **`backendServiceEnabled: true`** → Creates a second Cloud Run service for backend applications
 * **`dnsZoneEnabled: true`** → Creates a GCP DNS Zone for the specified domain
 * **`dockerRepoEnabled: true`** → Creates an Artifact Registry Docker repository for container images
-* **`postgresEnabled: true`** → Creates a Cloud SQL PostgreSQL instance
+* **`databaseEnabled: true`** → Creates a Cloud SQL database instance (PostgreSQL or MySQL, based on `database_engine`)
 * **`storageBucketEnabled: true`** → Creates a GCS bucket for object storage
 * **`serviceAccountEnabled: true`** → Creates a service account with a JSON key
 
@@ -88,17 +88,20 @@ When `networkingEnabled: true`:
 | **dockerRepoEnabled** | Create Docker repository     | `true` / `false`  | **Default:** `true` |
 | **docker_repo_name**  | Name of the Docker repository| `docker-repo`     | Default `docker-repo`|
 
-### Optional PostgreSQL Database
+### Optional Cloud SQL Database
 
-| Parameter                        | Description                                              | Example / Default          | Required / Default              |
-|----------------------------------|----------------------------------------------------------|----------------------------|---------------------------------|
-| **postgresEnabled**              | Create PostgreSQL database instance                      | `true` / `false`           | **Default:** `true`            |
-| **postgres_instance_name**       | Name of the PostgreSQL instance                          | `postgres`                 | Default `postgres`              |
-| **postgres_tier**                | PostgreSQL machine tier                                  | `db-f1-micro`              | Default `db-f1-micro`           |
-| **postgres_storage_gb**          | Storage size in GB                                       | `10`                       | Default `10`                    |
-| **postgres_version**             | PostgreSQL version                                       | `POSTGRES_15`              | Default `POSTGRES_15`           |
-| **postgres_root_password**       | Root password (rotate after deploy)                      | `change-me-immediately`    | Default `change-me-immediately` |
-| **postgres_authorized_networks** | List of CIDR ranges allowed to connect publicly          | `["1.2.3.4/32"]`           | Default `[]` (empty)            |
+| Parameter                         | Description                                              | Example / Default          | Required / Default              |
+|-----------------------------------|----------------------------------------------------------|----------------------------|---------------------------------|
+| **databaseEnabled**               | Create Cloud SQL database instance                       | `true` / `false`           | **Default:** `true`            |
+| **database_engine**               | Database engine type                                     | `POSTGRESQL` / `MYSQL`     | **Default:** `POSTGRESQL`       |
+| **database_instance_name**        | Name of the database instance                            | `database`                 | Default `database`              |
+| **database_tier**                 | Cloud SQL machine tier                                   | `db-f1-micro`              | Default `db-f1-micro`           |
+| **database_storage_gb**           | Storage size in GB                                       | `10`                       | Default `10`                    |
+| **database_version**              | Database version (e.g., POSTGRES_15 or MYSQL_8_0)        | `POSTGRES_15`              | Default `POSTGRES_15`           |
+| **database_root_password**        | Root password (rotate after deploy)                      | `change-me-immediately`    | Default `change-me-immediately` |
+| **database_authorized_networks**  | List of CIDR ranges allowed to connect publicly          | `["1.2.3.4/32"]`           | Default `[]` (empty)            |
+
+**Note:** The `database_engine` parameter is a **string enum** with two allowed values: `POSTGRESQL` and `MYSQL`. When selecting an engine, ensure the `database_version` matches the engine type (e.g., `POSTGRES_15` for PostgreSQL, `MYSQL_8_0` for MySQL).
 
 ### Optional Storage Bucket
 
@@ -114,7 +117,7 @@ When `networkingEnabled: true`:
 | **serviceAccountEnabled**  | Create Service Account with JSON key| `true` / `false`     | **Default:** `true` |
 | **service_account_id**     | Service account ID                | `app-service-account`  | Default `app-service-account`|
 
-> **Tip:** All resources are enabled by default for a complete environment setup. Toggle feature flags to `false` per environment if you don't need certain resources (e.g., disable PostgreSQL for frontend-only deployments).
+> **Tip:** All resources are enabled by default for a complete environment setup. Toggle feature flags to `false` per environment if you don't need certain resources (e.g., disable the database for frontend-only deployments).
 
 ---
 
@@ -129,15 +132,15 @@ VPC (if networkingEnabled)
   ↓
 Subnetwork + Router NAT (if networkingEnabled, depends on VPC)
   ↓
-Postgres Database (if enabled, depends on Subnetwork when networkingEnabled)
+Cloud SQL Database (if enabled, depends on Subnetwork when networkingEnabled)
   ↓
-Frontend Service (depends on Postgres, Docker Repo, DNS Zone)
+Frontend Service (depends on Database, Docker Repo, DNS Zone)
 
 Service Account (if enabled)
   ↓
 Storage Bucket (if enabled, depends on Service Account)
   ↓
-Backend Service (if enabled, depends on Storage Bucket, Service Account, Postgres, Docker Repo, DNS Zone)
+Backend Service (if enabled, depends on Storage Bucket, Service Account, Database, Docker Repo, DNS Zone)
 ```
 
 ### How It Works
@@ -145,16 +148,16 @@ Backend Service (if enabled, depends on Storage Bucket, Service Account, Postgre
 - **Subnetwork and Router NAT** wait for:
   - VPC network (if `networkingEnabled: true`)
 
-- **PostgreSQL Database** waits for:
+- **Cloud SQL Database** waits for:
   - Subnetwork (if `networkingEnabled: true`)
 
 - **Frontend Service** waits for:
-  - PostgreSQL database (if `postgresEnabled: true`)
+  - Cloud SQL database (if `databaseEnabled: true`)
   - Docker repository (if `dockerRepoEnabled: true`)
   - DNS zone (if `dnsZoneEnabled: true`)
 
 - **Backend Service** waits for:
-  - PostgreSQL database (if `postgresEnabled: true`)
+  - Cloud SQL database (if `databaseEnabled: true`)
   - Docker repository (if `dockerRepoEnabled: true`)
   - Storage bucket (if `storageBucketEnabled: true`)
   - Service account (if `serviceAccountEnabled: true`)
@@ -211,26 +214,39 @@ When `serviceAccountEnabled: true`, the chart creates a service account with a J
 
 ---
 
-## PostgreSQL Database Configuration
+## Cloud SQL Database Configuration
 
-When `postgresEnabled: true`, the PostgreSQL instance is created with different network configurations depending on the `networkingEnabled` flag:
+When `databaseEnabled: true`, a Cloud SQL instance is created with the engine specified by `database_engine`. The chart supports both **PostgreSQL** and **MySQL**.
 
-### With Networking Enabled (`networkingEnabled: true`)
+### Choosing a Database Engine
+
+| Engine       | `database_engine` | Example `database_version` |
+|--------------|-------------------|----------------------------|
+| PostgreSQL   | `POSTGRESQL`      | `POSTGRES_15`, `POSTGRES_14`, `POSTGRES_13` |
+| MySQL        | `MYSQL`           | `MYSQL_8_0`, `MYSQL_5_7` |
+
+> **Important:** Ensure `database_version` matches the selected `database_engine`. For example, use `POSTGRES_15` with `POSTGRESQL` or `MYSQL_8_0` with `MYSQL`.
+
+### Network Configuration
+
+Network configuration depends on the `networkingEnabled` flag:
+
+#### With Networking Enabled (`networkingEnabled: true`)
 
 - **Private IP**: Enabled via VPC peering (most secure)
-- **Public IP**: Only enabled if `postgres_authorized_networks` is not empty
-- **Authorized Networks**: Uses the list from `postgres_authorized_networks` (can be empty for private-only access)
+- **Public IP**: Only enabled if `database_authorized_networks` is not empty
+- **Authorized Networks**: Uses the list from `database_authorized_networks` (can be empty for private-only access)
 
-### Without Networking (`networkingEnabled: false`)
+#### Without Networking (`networkingEnabled: false`)
 
 - **Public IP**: Enabled by default
-- **Authorized Networks**: Uses `postgres_authorized_networks` if provided, otherwise defaults to `0.0.0.0/0` (open to all IPs)
+- **Authorized Networks**: Uses `database_authorized_networks` if provided, otherwise defaults to `0.0.0.0/0` (open to all IPs)
 
 ### Important Security Steps
 
 1. **Rotate the root password immediately** after deployment
 2. **Enable networking** (`networkingEnabled: true`) for production environments to use private IP
-3. **Restrict authorized networks** by providing specific CIDR ranges in `postgres_authorized_networks`
+3. **Restrict authorized networks** by providing specific CIDR ranges in `database_authorized_networks`
 4. **Create application-specific database users** instead of using root
 5. **Use Cloud SQL Proxy** or VPC connector for secure connections from Cloud Run services
 
@@ -270,10 +286,11 @@ When `dockerRepoEnabled: true`, an Artifact Registry Docker repository is create
 
 ## Important Notes
 
-* **Networking**: Enable `networkingEnabled: true` for production to use private IP for PostgreSQL. The VPC includes a Router NAT for outbound internet access from private resources
+* **Networking**: Enable `networkingEnabled: true` for production to use private IP for the database. The VPC includes a Router NAT for outbound internet access from private resources
 * **DNS Zone**: Ensure your domain is registered and delegated to GCP before enabling `dnsZoneEnabled`
-* **PostgreSQL Password**: The default password `change-me-immediately` should be rotated immediately after deployment for security
-* **Authorized Networks**: When networking is disabled, the default `0.0.0.0/0` allows connections from anywhere. Use `postgres_authorized_networks` to restrict access or enable networking for private IP
+* **Database Engine**: Use `database_engine` to choose between `POSTGRESQL` and `MYSQL`, and ensure `database_version` matches the selected engine
+* **Database Password**: The default password `change-me-immediately` should be rotated immediately after deployment for security
+* **Authorized Networks**: When networking is disabled, the default `0.0.0.0/0` allows connections from anywhere. Use `database_authorized_networks` to restrict access or enable networking for private IP
 * **Service Account**: IAM permissions must be granted manually after the service account is created
 * **Container Images**: Both services default to `nginx:latest`. Replace with your actual application images after deployment
 * **Environment Variables**: Customize the placeholder `SERVICE_NAME` and `ENV` variables for your applications

@@ -5,9 +5,9 @@ kind: GcpCloudRun
 metadata:
   name: "{{ values.backend_service_name }}"
   relationships:
-    {% if values.postgresEnabled | bool %}
+    {% if values.databaseEnabled | bool %}
     - kind: GcpCloudSql
-      name: "{{ values.postgres_instance_name }}"
+      name: "{{ values.database_instance_name }}"
       type: uses
     {% endif %}
     {% if values.dockerRepoEnabled | bool %}

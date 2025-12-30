@@ -26,7 +26,7 @@ params:
   value: "1.29"
 
 - name: disable_public_endpoint
-  description: true → private endpoint
+  description: Private endpoint
   type: bool
   value: true
 
@@ -74,7 +74,7 @@ params:
 
 # ─── Route 53 & ACM Cert (optional) ───────────────────────────────────
 - name: create_hosted_zone
-  description: true → create Route 53 public zone
+  description: Create Route 53 public zone
   type: bool
   value: false
 
@@ -84,7 +84,7 @@ params:
 
 # ─── KMS secrets encryption ───────────────────────────────────────────
 - name: enable_kms_encryption
-  description: true → create CMK for secrets
+  description: Create CMK for secrets
   type: bool
   value: true
 
