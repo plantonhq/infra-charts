@@ -42,7 +42,7 @@ params:
   value: "1"
 
 - name: enable_autoscale
-  description: true → enable autoscaling
+  description: Enable autoscaling
   type: bool
   value: false
 

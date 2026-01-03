@@ -1,7 +1,7 @@
 params:
   # ─── GCP project & billing ─────────────────────────────────────────────────────
   - name: create_project                # NEW
-    description: "true → create a brand‑new GCP project; false → use existing project_id"
+    description: Create a brand‑new GCP project; false uses existing project_id
     type: bool
     value: false
 

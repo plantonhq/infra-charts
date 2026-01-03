@@ -1,9 +1,9 @@
-{% if values.postgresEnabled | bool %}
+{% if values.databaseEnabled | bool %}
 ---
 apiVersion: gcp.project-planton.org/v1
 kind: GcpCloudSql
 metadata:
-  name: "{{ values.postgres_instance_name }}"
+  name: "{{ values.database_instance_name }}"
 {% if values.networkingEnabled | bool %}
   relationships:
     - kind: GcpSubnetwork
@@ -14,11 +14,11 @@ spec:
   projectId:
     value: "{{ values.gcp_project_id }}"
   region: "{{ values.gcp_region }}"
-  databaseEngine: POSTGRESQL
-  databaseVersion: "{{ values.postgres_version }}"
-  tier: "{{ values.postgres_tier }}"
-  storageGb: {{ values.postgres_storage_gb }}
-  rootPassword: "{{ values.postgres_root_password }}"  # IMPORTANT: Rotate this password immediately after deployment
+  databaseEngine: {{ values.database_engine }}
+  databaseVersion: "{{ values.database_version }}"
+  tier: "{{ values.database_tier }}"
+  storageGb: {{ values.database_storage_gb }}
+  rootPassword: "{{ values.database_root_password }}"  # IMPORTANT: Rotate this password immediately after deployment
   network:
 {% if values.networkingEnabled | bool %}
     vpcId:
@@ -28,10 +28,10 @@ spec:
         fieldPath: status.outputs.network_self_link
     privateIpEnabled: true
 {% endif %}
-{% if values.postgres_authorized_networks | length > 0 %}
+{% if values.database_authorized_networks | length > 0 %}
     ipv4Enabled: true
     authorizedNetworks:
-{% for cidr in values.postgres_authorized_networks %}
+{% for cidr in values.database_authorized_networks %}
       - "{{ cidr }}"
 {% endfor %}
 {% elif not values.networkingEnabled | bool %}

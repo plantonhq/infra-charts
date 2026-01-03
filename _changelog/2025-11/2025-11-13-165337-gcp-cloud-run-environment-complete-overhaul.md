@@ -351,7 +351,7 @@ spec:
     storage bucket, Docker repository, Service Account, and DNS zone. Supports 
     frontend and optional backend services.
   webLinks:
-    chartWebUrl: https://github.com/plantoncloud/infra-charts/tree/main/gcp/cloud-run-environment
+    chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/gcp/cloud-run-environment
     readmeRawUrl: https://raw.githubusercontent.com/plantoncloud/infra-charts/refs/heads/main/gcp/cloud-run-environment/README.md
 ```
 

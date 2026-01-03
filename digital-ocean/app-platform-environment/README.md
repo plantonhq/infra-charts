@@ -33,7 +33,7 @@ single flag in`values.yaml`.
 
 ```bash
 # 1. Fork or pull the chart
-git clone https://github.com/plantoncloud/infra-charts.git
+git clone https://github.com/plantonhq/infra-charts.git
 cd infra-charts/digitalocean-app-platform-env
 
 # 2. Copy values and tweak for your environment
