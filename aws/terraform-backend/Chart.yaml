@@ -9,5 +9,5 @@ spec:
   iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/connect/terraformbackendcredential/v1/assets/logo.svg
   isReady: true
   webLinks:
-    chartWebUrl: https://github.com/plantoncloud/infra-charts/tree/main/aws-terraform-backend
+    chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/aws-terraform-backend
     readmeRawUrl: https://raw.githubusercontent.com/plantoncloud/infra-charts/refs/heads/main/aws-terraform-backend/README.md
