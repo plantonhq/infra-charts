@@ -6,7 +6,7 @@ spec:
   selector:
     kind: platform
   description: DigitalOcean App Platform environment with optional HTTPS on a custom domain.
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/infrahub/cloudresource/provider/digitalocean/digitaloceanappplatformservice/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/infrahub/cloudresource/provider/digitalocean/digitaloceanappplatformservice/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/digitalocean-app-platform-env

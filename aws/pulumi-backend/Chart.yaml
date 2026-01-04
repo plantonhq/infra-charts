@@ -6,7 +6,7 @@ spec:
   selector:
     kind: platform
   description: Setup Pulumi State Backend using AWS S3
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/connect/pulumibackendcredential/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/connect/pulumibackendcredential/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/aws-pulumi-backend

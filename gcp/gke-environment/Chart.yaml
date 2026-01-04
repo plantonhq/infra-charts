@@ -6,7 +6,7 @@ spec:
   selector:
     kind: platform
   description: Configurable GKE Environment with custom VPC, Cloud NAT, Cloud DNS and an autoscaled node‑pool and various addons.
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/infrahub/cloudresource/provider/gcp/gcpgkeclustercore/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/infrahub/cloudresource/provider/gcp/gcpgkeclustercore/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/gcp-gke

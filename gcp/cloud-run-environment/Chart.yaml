@@ -6,7 +6,7 @@ spec:
   selector:
     kind: platform
   description: Complete GCP Cloud Run environment with VPC networking, optional Cloud SQL database (PostgreSQL or MySQL with private IP support), storage bucket, Docker repository, Service Account, and DNS zone. Supports frontend and optional backend services.
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/infrahub/cloudresource/provider/gcp/gcpcloudrun/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/infrahub/cloudresource/provider/gcp/gcpcloudrun/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/gcp/cloud-run-environment

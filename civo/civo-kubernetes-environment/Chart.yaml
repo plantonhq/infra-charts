@@ -8,7 +8,7 @@ spec:
   description: >
     Configurable Civo Kubernetes Environment with custom VPC, firewall, optional DNS zone,
     an autoscaled default node pool and toggleable Kubernetes add-ons (Cert-Manager, Istio, etc.).
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/infrahub/cloudresource/provider/civo/civokubernetescluster/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/infrahub/cloudresource/provider/civo/civokubernetescluster/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/civo/civo-kubernetes-environment

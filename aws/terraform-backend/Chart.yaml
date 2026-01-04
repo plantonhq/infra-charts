@@ -6,7 +6,7 @@ spec:
   selector:
     kind: platform
   description: Setup Terraform State Backend using AWS S3 and DynamoDB
-  iconUrl: https://storage.googleapis.com/planton-cloud-static-assets/logos/api-resources/connect/terraformbackendcredential/v1/assets/logo.svg
+  iconUrl: https://assets.planton.ai/apis/connect/terraformbackendcredential/v1/assets/logo.svg
   isReady: true
   webLinks:
     chartWebUrl: https://github.com/plantonhq/infra-charts/tree/main/aws-terraform-backend
